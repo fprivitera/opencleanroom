@@ -1,0 +1,46 @@
+# Synthetic NYC taxi dataset: a keyed table (drivers), a truncated table (trips) and a public lookup (taxi_zones).
+# Privacy unit: the driver. Loads to the same schema as cleanroom_sql.taxi.SCHEMA.
+version: 1
+dataset:
+  name: nyc_taxi
+  backend: duckdb-dev
+  privacy_unit: {column: hack_license}
+  truncation: {k: 50}
+  tables:
+    taxi_zones:
+      public: true
+      primary_key: location_id
+      columns:
+        location_id: {type: int}
+        borough: {type: string}
+        zone: {type: string}
+    drivers:
+      primary_key: hack_license
+      columns:
+        hack_license: {type: string}
+        fleet: {type: string}
+    trips:
+      primary_key: trip_id
+      foreign_keys:
+        hack_license: drivers.hack_license
+        pu_location_id: taxi_zones.location_id
+      columns:
+        trip_id: {type: int}
+        hack_license: {type: string}
+        pu_location_id: {type: int}
+        fare_amount: {type: int, clamp: [0, 20000]}   # cents, clamp at $200
+        trip_distance: {type: int, clamp: [0, 500]}   # tenths of a mile
+  budget: {epsilon: "10.0", epoch: "2026-10"}
+  keysets:
+    taxi_zones.borough: {from: taxi_zones.borough}
+    drivers.fleet: [medallion, fleet_A, fleet_B]
+consumers:
+  analytics-team:
+    tables: [trips, taxi_zones, drivers]
+    aggregates: [count, sum, avg]
+    max_epsilon_per_query: 0.5
+    budget: {epsilon: 5.0}
+  counts-only:
+    tables: [trips, taxi_zones]
+    aggregates: [count]
+    max_epsilon_per_query: 0.2

@@ -1,0 +1,20 @@
+# One private table, no joins. Privacy unit: the user.
+version: 1
+dataset:
+  name: app_events
+  privacy_unit: {column: user_id}
+  truncation: {k: 20}
+  tables:
+    events:
+      primary_key: event_id
+      columns:
+        event_id: {type: int}
+        user_id: {type: string}
+        amount: {type: int, clamp: [0, 1000]}
+  budget: {epsilon: "4.0"}
+consumers:
+  reporting:
+    tables: [events]
+    aggregates: [count, sum, avg]
+    max_epsilon_per_query: 0.5
+    budget: {epsilon: 2.0}

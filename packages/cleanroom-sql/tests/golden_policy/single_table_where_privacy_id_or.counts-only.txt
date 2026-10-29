@@ -1,0 +1,2 @@
+rejected
+aggregate sum is not allowed by the policy of counts-only

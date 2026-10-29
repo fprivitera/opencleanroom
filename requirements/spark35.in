@@ -1,0 +1,2 @@
+-e ./packages/cleanroom-sql[duckdb,test]
+-e ./packages/opencleanroom[test,spark35]

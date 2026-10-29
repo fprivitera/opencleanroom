@@ -1,0 +1,36 @@
+# Two truncated tables (trips, tips) keyed by one driver through the keyed table drivers.
+# tips names its driver column differently and declares the override privacy_id: driver.
+version: 1
+dataset:
+  name: taxi_with_tips
+  privacy_unit: {column: hack_license}
+  truncation: {k: 30}
+  tables:
+    drivers:
+      primary_key: hack_license
+      columns:
+        hack_license: {type: string}
+        fleet: {type: string}
+    trips:
+      primary_key: trip_id
+      foreign_keys: {hack_license: drivers.hack_license}
+      columns:
+        trip_id: {type: int}
+        hack_license: {type: string}
+        fare_amount: {type: int, clamp: [0, 20000]}
+    tips:
+      primary_key: tip_id
+      privacy_id: driver
+      foreign_keys: {driver: drivers.hack_license}
+      columns:
+        tip_id: {type: int}
+        driver: {type: string}
+        amount: {type: int, clamp: [0, 5000]}
+  budget: {epsilon: "6.0"}
+  keysets:
+    drivers.fleet: [medallion, fleet_A, fleet_B]
+consumers:
+  finance:
+    tables: [drivers, trips, tips]
+    aggregates: [count, sum]
+    max_epsilon_per_query: 0.5

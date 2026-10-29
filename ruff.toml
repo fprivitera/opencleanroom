@@ -1,0 +1,12 @@
+# Mechanical checks the reviewers kept finding by hand; judgement calls stay with review.
+line-length = 160
+target-version = "py311"
+extend-exclude = [".venv", "build"]
+
+[lint]
+select = ["E", "F", "I", "B", "UP", "PLW1510", "RUF100"]
+ignore = ["E741", "B905"]  # short loop names in tests; zip(strict=) adds noise where lengths are asserted
+
+[lint.per-file-ignores]
+"packages/*/tests/*" = ["E501"]
+"packages/cleanroom-sql/red_team.py" = ["E501", "E731"]

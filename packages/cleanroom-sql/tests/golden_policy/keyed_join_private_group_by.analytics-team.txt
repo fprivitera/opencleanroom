@@ -1,0 +1,2 @@
+accepted
+SELECT d.fleet, COUNT(*) FROM drivers AS d JOIN (SELECT trip_id, hack_license, pu_location_id, fare_amount, trip_distance FROM (SELECT trip_id, hack_license, pu_location_id, fare_amount, trip_distance, ROW_NUMBER() OVER (PARTITION BY hack_license ORDER BY trip_id) AS _rn FROM trips) AS _t WHERE _rn <= 50) AS t ON d.hack_license = t.hack_license GROUP BY d.fleet

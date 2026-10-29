@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cleanroom-sql policy, version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "dataset", "consumers"],
+  "properties": {
+    "version": {"const": 1},
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "privacy_unit", "truncation", "tables", "budget"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "backend": {"type": "string"},
+        "dialect": {"enum": ["duckdb", "spark", "postgres"]},
+        "privacy_unit": {
+          "type": "object", "additionalProperties": false, "required": ["column"],
+          "properties": {"column": {"$ref": "#/$defs/identifier"}}
+        },
+        "truncation": {
+          "type": "object", "additionalProperties": false, "required": ["k"],
+          "properties": {"k": {"type": "integer", "minimum": 1}}
+        },
+        "tables": {
+          "type": "object", "minProperties": 1,
+          "propertyNames": {"$ref": "#/$defs/identifier"},
+          "additionalProperties": {"$ref": "#/$defs/table"}
+        },
+        "budget": {"$ref": "#/$defs/budget"},
+        "keysets": {
+          "type": "object",
+          "propertyNames": {"$ref": "#/$defs/qualified"},
+          "additionalProperties": {
+            "oneOf": [
+              {"type": "array", "minItems": 1, "items": {"type": ["string", "integer"]}},
+              {"type": "object", "additionalProperties": false, "required": ["from"],
+               "properties": {"from": {"$ref": "#/$defs/qualified"}}}
+            ]
+          }
+        }
+      }
+    },
+    "consumers": {
+      "type": "object", "minProperties": 1,
+      "propertyNames": {"type": "string", "minLength": 1},
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["tables", "aggregates", "max_epsilon_per_query"],
+        "properties": {
+          "tables": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/identifier"}, "uniqueItems": true},
+          "aggregates": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+          "max_epsilon_per_query": {"$ref": "#/$defs/epsilon"},
+          "budget": {"$ref": "#/$defs/consumer_budget"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+    "qualified": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$"},
+    "epsilon": {"type": ["number", "string"], "pattern": "^[0-9]+(\\.[0-9]+)?$", "exclusiveMinimum": 0},
+    "budget": {
+      "type": "object", "additionalProperties": false, "required": ["epsilon"],
+      "properties": {"epsilon": {"$ref": "#/$defs/epsilon"}, "epoch": {"type": "string"}}
+    },
+    "consumer_budget": {
+      "type": "object", "additionalProperties": false, "required": ["epsilon"],
+      "properties": {"epsilon": {"$ref": "#/$defs/epsilon"}}
+    },
+    "column": {
+      "type": "object", "additionalProperties": false, "required": ["type"],
+      "properties": {
+        "type": {"enum": ["int", "string", "bool", "date"]},
+        "clamp": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer"}},
+        "unique": {"type": "boolean"}
+      }
+    },
+    "table": {
+      "type": "object", "additionalProperties": false, "required": ["primary_key", "columns"],
+      "properties": {
+        "public": {"type": "boolean"},
+        "primary_key": {"$ref": "#/$defs/identifier"},
+        "privacy_id": {"$ref": "#/$defs/identifier"},
+        "order_by": {"$ref": "#/$defs/identifier"},
+        "foreign_keys": {
+          "type": "object",
+          "propertyNames": {"$ref": "#/$defs/identifier"},
+          "additionalProperties": {"$ref": "#/$defs/qualified"}
+        },
+        "columns": {
+          "type": "object", "minProperties": 1,
+          "propertyNames": {"$ref": "#/$defs/identifier"},
+          "additionalProperties": {"$ref": "#/$defs/column"}
+        }
+      }
+    }
+  }
+}

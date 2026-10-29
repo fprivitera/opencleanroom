@@ -1,0 +1,47 @@
+# Chicago Taxi Trips (City of Chicago open data): one private table and a public lookup of community areas.
+# Privacy unit: the taxi (hashed taxi_id). Integers only: miles in tenths, money in cents.
+# Load with packages/opencleanroom/examples/chicago/fetch_chicago_taxi.py (March 2025 by default); the data stays out of git.
+version: 1
+dataset:
+  name: chicago_taxi
+  backend: duckdb-chicago
+  privacy_unit: {column: taxi_id}
+  truncation: {k: 400}   # trips one taxi may contribute per epoch (a month): about the 90th percentile, keeps 95.8% of March 2025
+  tables:
+    community_areas:
+      public: true
+      primary_key: area_number
+      columns:
+        area_number: {type: int}
+        name: {type: string}
+    trips:
+      primary_key: trip_id
+      foreign_keys:
+        pickup_community_area: community_areas.area_number
+      columns:
+        trip_id: {type: string}
+        taxi_id: {type: string}
+        trip_date: {type: date}
+        pickup_community_area: {type: int}
+        dropoff_community_area: {type: int}
+        trip_seconds: {type: int, clamp: [0, 4800]}
+        trip_miles: {type: int, clamp: [0, 300]}   # tenths of a mile
+        fare: {type: int, clamp: [0, 8000]}         # cents
+        tips: {type: int, clamp: [0, 2000]}         # cents
+        payment_type: {type: string}
+        company: {type: string}
+  budget: {epsilon: "10.0", epoch: "2025-03"}
+  keysets:
+    community_areas.name: {from: community_areas.name}
+    trips.pickup_community_area: {from: community_areas.area_number}
+    trips.payment_type: [Credit Card, Cash, Mobile, Prcard, Unknown, No Charge, Dispute]
+consumers:
+  city-analytics:
+    tables: [trips, community_areas]
+    aggregates: [count, sum, avg]
+    max_epsilon_per_query: 0.5
+    budget: {epsilon: 5.0}
+  counts-only:
+    tables: [trips, community_areas]
+    aggregates: [count]
+    max_epsilon_per_query: 0.2
