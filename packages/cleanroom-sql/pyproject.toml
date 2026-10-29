@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=77"]  # PEP 639 license expression
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cleanroom-sql"
+version = "0.1.0a1"
+description = "SQL rewriter and differentially private executor for a self-hosted clean room"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{name = "The OpenCleanroom Authors"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Security",
+]
+# Library deps (ADR 0009, amended by ADR 0010), pinned exactly so an install reproduces the tested environment.
+dependencies = [
+    "sqlglot==30.24.0",
+    "opendp==0.16.0",
+    "pyyaml==6.0.3",      # policy files (ADR 0010)
+    "jsonschema==4.26.0",
+]
+
+[project.urls]
+Source = "https://github.com/fprivitera/opencleanroom"
+Issues = "https://github.com/fprivitera/opencleanroom/issues"
+Security = "https://github.com/fprivitera/opencleanroom/security/policy"
+Changelog = "https://github.com/fprivitera/opencleanroom/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+# The synthetic taxi dataset inside the library imports duckdb.
+duckdb = ["duckdb==2.0.0"]
+test = [
+    "pytest==9.1.1",
+    "hypothesis==6.170.5",
+    "ruff==0.17.2",
+    "cleanroom-sql[duckdb]",
+]
+
+[project.scripts]
+cleanroom-sql = "cleanroom_sql.__main__:main"
+
+[tool.setuptools]
+packages = ["cleanroom_sql"]
+
+[tool.setuptools.package-data]
+cleanroom_sql = ["policy.schema.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

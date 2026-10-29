@@ -1,0 +1,2 @@
+rejected
+aggregate avg is not allowed by the policy of counts-only

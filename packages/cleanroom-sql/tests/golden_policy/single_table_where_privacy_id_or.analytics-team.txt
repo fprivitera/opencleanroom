@@ -1,0 +1,2 @@
+accepted
+SELECT COUNT(*), SUM(CASE WHEN fare_amount IS NULL THEN NULL ELSE LEAST(GREATEST(fare_amount, 0), 20000) END) FROM (SELECT trip_id, hack_license, pu_location_id, fare_amount, trip_distance FROM (SELECT trip_id, hack_license, pu_location_id, fare_amount, trip_distance, ROW_NUMBER() OVER (PARTITION BY hack_license ORDER BY trip_id) AS _rn FROM trips WHERE hack_license = 'HL1' OR trip_distance > 5) AS _t WHERE _rn <= 50) AS trips

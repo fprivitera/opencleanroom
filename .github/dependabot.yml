@@ -1,0 +1,11 @@
+# Monthly upgrade PRs for the exact pins; the gates and goldens decide (risk R4).
+version: 2
+updates:
+  - package-ecosystem: pip
+    directories: ["/packages/cleanroom-sql", "/packages/opencleanroom"]
+    schedule: {interval: monthly}
+    groups:
+      python: {patterns: ["*"]}
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: {interval: monthly}

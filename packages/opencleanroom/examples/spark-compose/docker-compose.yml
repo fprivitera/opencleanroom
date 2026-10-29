@@ -1,0 +1,14 @@
+# A Spark Connect server for the quickstart (ADR 0007): the official image, Spark Connect on localhost:15002.
+services:
+  spark-connect:
+    image: apache/spark:4.1.3
+    command: ["/opt/spark/sbin/start-connect-server.sh", "--conf", "spark.driver.memory=2g"]
+    environment:
+      SPARK_NO_DAEMONIZE: "1"
+    ports:
+      - "127.0.0.1:15002:15002"
+    healthcheck:  # `docker compose up -d --wait` returns once Spark Connect accepts connections
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/15002'"]
+      interval: 2s
+      timeout: 2s
+      retries: 60

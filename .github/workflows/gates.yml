@@ -1,0 +1,77 @@
+name: gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with: {version: "0.13.1"}  # the lock files' text depends on the uv version
+      - name: lock files match the pyproject pins
+        run: scripts/lock.sh && git diff --exit-code requirements/
+      - run: uv venv --python ${{ matrix.python }} .venv
+      - run: uv pip sync --python .venv/bin/python --require-hashes requirements/gates.txt
+      - run: uv pip install --python .venv/bin/python --no-deps -e packages/cleanroom-sql -e packages/opencleanroom
+      - name: lint
+        run: .venv/bin/ruff check packages
+      - name: license lines and files (ADR 0008)
+        run: |
+          missing=$(git ls-files '*.py' '*.sh' | xargs grep -L 'SPDX-License-Identifier: Apache-2.0' || true)
+          if [ -n "$missing" ]; then echo "no SPDX line in:"; echo "$missing"; exit 1; fi
+          for p in packages/*/; do cmp LICENSE "${p}LICENSE"; cmp NOTICE "${p}NOTICE"; done
+      - name: library gates
+        working-directory: packages/cleanroom-sql
+        run: |
+          ../../.venv/bin/python -m pytest -q
+          ../../.venv/bin/python red_team.py
+      - name: platform gates
+        working-directory: packages/opencleanroom
+        run: |
+          ../../.venv/bin/python -m pytest -q
+          ../../.venv/bin/python red_team_platform.py
+      - name: quickstart from an empty directory
+        run: |
+          mkdir quickstart-run && cd quickstart-run
+          PATH="$GITHUB_WORKSPACE/.venv/bin:$PATH" PYTHON="$GITHUB_WORKSPACE/.venv/bin/python" \
+            POLICY="$GITHUB_WORKSPACE/packages/cleanroom-sql/examples/taxi.yaml" \
+            bash "$GITHUB_WORKSPACE/packages/opencleanroom/examples/quickstart.sh"
+
+  spark:
+    # Spark Connect in Docker (ADR 0007): the 4.1 line with pyspark-client, the 3.5 line with its own client.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - spark: "4.1.3"
+            python: "3.12"
+            extra: "spark"
+          - spark: "3.5.9"
+            python: "3.11"
+            extra: "spark35"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - run: uv venv --python ${{ matrix.python }} .venv
+      - run: uv pip sync --python .venv/bin/python --require-hashes requirements/${{ matrix.extra }}.txt
+      - run: uv pip install --python .venv/bin/python --no-deps -e packages/cleanroom-sql -e packages/opencleanroom
+      - name: start Spark Connect ${{ matrix.spark }}
+        run: |
+          line=$(scripts/spark-connect.sh up ${{ matrix.spark }})  # an assignment fails the step if the script fails
+          echo "${line#export }" >> "$GITHUB_ENV"
+      - name: Spark gates
+        working-directory: packages/opencleanroom
+        run: |
+          : "${OCR_SPARK_URL:?the Spark server did not start}"  # without it every Spark test would skip and pass
+          ../../.venv/bin/python -m pytest -q
+          ../../.venv/bin/python red_team_platform.py
+      - name: stop Spark Connect
+        if: always()
+        run: scripts/spark-connect.sh down ${{ matrix.spark }}

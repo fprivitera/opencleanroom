@@ -1,0 +1,2 @@
+accepted
+SELECT z.borough, SUM(CASE WHEN t.fare_amount IS NULL THEN NULL ELSE LEAST(GREATEST(t.fare_amount, 0), 20000) END), COUNT(t.fare_amount) FROM (SELECT trip_id, hack_license, pu_location_id, fare_amount, trip_distance FROM (SELECT trip_id, hack_license, pu_location_id, fare_amount, trip_distance, ROW_NUMBER() OVER (PARTITION BY hack_license ORDER BY trip_id) AS _rn FROM trips) AS _t WHERE _rn <= 50) AS t JOIN taxi_zones AS z ON t.pu_location_id = z.location_id GROUP BY z.borough
