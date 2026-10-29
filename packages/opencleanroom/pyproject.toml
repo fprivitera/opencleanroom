@@ -39,7 +39,7 @@ Changelog = "https://github.com/fprivitera/opencleanroom/blob/main/CHANGELOG.md"
 ui = ["streamlit==1.66.1"]
 spark = ["pyspark-client==4.1.3"]  # Spark Connect client, pinned to the server line it is tested on (ADR 0007)
 # A 4.x client cannot talk to a 3.5 server; the 3.5 line needs its own client, on pandas 2 and NumPy 1.
-spark35 = ["pyspark[connect]==3.5.9", "pandas==2.3.3", "numpy==1.26.4", "pyarrow==17.0.0"]
+spark35 = ["pyspark[connect]==3.5.9", "pandas==2.3.3", "numpy==1.26.4", "pyarrow==23.0.1"]
 test = ["pytest==9.1.1", "ruff==0.17.2", "httpx==0.28.1", "opencleanroom[ui]"]
 
 [project.scripts]
