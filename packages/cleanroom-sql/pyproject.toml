@@ -22,7 +22,7 @@ classifiers = [
 ]
 # Library deps (ADR 0009, amended by ADR 0010), pinned exactly so an install reproduces the tested environment.
 dependencies = [
-    "sqlglot==30.24.0",
+    "sqlglot==30.25.0",
     "opendp==0.16.0",
     "pyyaml==6.0.3",      # policy files (ADR 0010)
     "jsonschema==4.26.0",
@@ -38,9 +38,9 @@ Changelog = "https://github.com/fprivitera/opencleanroom/blob/main/CHANGELOG.md"
 # The synthetic taxi dataset inside the library imports duckdb.
 duckdb = ["duckdb==2.0.0"]
 test = [
-    "pytest==9.1.1",
-    "hypothesis==6.170.5",
-    "ruff==0.17.2",
+    "pytest==9.2.0",
+    "hypothesis==6.170.13",
+    "ruff==0.17.3",
     "cleanroom-sql[duckdb]",
 ]
 
